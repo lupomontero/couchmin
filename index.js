@@ -143,7 +143,7 @@ module.exports = function (options) {
 
   function syncStats(results) {
     var stats = results.reduce(function (memo, result) {
-      if (result.error) {
+      if (result.error || (result.value || {}).error) {
         memo.error += 1;
       } else {
         memo.success += 1;
