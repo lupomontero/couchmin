@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var url = require('url');
 var events = require('events');
-var spawn = require('child_process').spawn;
+var cp = require('child_process');
 var mkdirp = require('mkdirp');
 var rimraf = require('rimraf');
 var which = require('which');
@@ -11,6 +11,7 @@ var uuid = require('uuid');
 var _ = require('lodash');
 var request = require('request').defaults({ json: true });
 var table = require('text-table');
+var pkg = require('./package.json');
 
 
 var defaults = {
@@ -24,13 +25,19 @@ function systemCouch(cb) {
   which('couchdb', function (err, bin) {
     if (err) { return cb(err); }
 
-    var ini = path.resolve(path.dirname(bin), '../etc/couchdb/default.ini');
+    var couchdb = {
+      prefix: path.resolve(path.dirname(bin), '../'),
+      bin: bin
+    };
+
+    couchdb.ini = path.resolve(couchdb.prefix, './etc/couchdb/default.ini');
 
     if (bin === '/usr/bin/couchdb') {
-      ini = '/etc/couchdb/default.ini';
+      couchdb.prefix = null;
+      couchdb.ini = '/etc/couchdb/default.ini';
     }
 
-    cb(null, { bin: bin, ini: ini });
+    cb(null, couchdb);
   });
 }
 
@@ -188,38 +195,59 @@ module.exports = function (options) {
 
   couchmin.active.description = 'Get or set the active CouchDB server.';
   couchmin.active.args = [
-    { name: 'name', type: String, required: false, description: 'Server name'  }
+    { name: 'name', required: false, description: 'Server name.'  }
   ];
 
 
   couchmin.add = function (name, uri, cb) {
-    if (arguments.length === 1) {
-      cb = name;
-      name = null;
-      uri = null;
-    } else if (arguments.length === 2) {
-      cb = uri;
-      uri = null;
+    var urlObj = url.parse(uri);
+    var authParts = (urlObj.auth || '').split(':');
+    var auth;
+
+    if (settings.servers[name]) {
+      return cb(new Error('Server "' + name + '" already exists'));
     }
 
-    if (!name || !uri) {
-      return cb(new Error('Both name and url are required'));
+    if (authParts.length === 2) {
+      auth = { user: authParts[0], pass: authParts[1] };
     }
 
-    settings.servers[name] = {
-      id: uuid(),
-      name: name,
-      uri: uri,
-      createdAt: new Date()
-    };
+    if (['http:', 'https:'].indexOf(urlObj.protocol) === -1 || !urlObj.host || !urlObj.path) {
+      return cb(new Error('Invalid URL'));
+    }
 
-    saveConfig(cb);
+    // We don't care about query string or auth
+    uri = urlObj.protocol + '//' + urlObj.host + urlObj.path;
+
+    // Remove trailing slash.
+    if (/\/$/.test(uri)) { uri = uri.slice(0, -1); }
+
+    request(uri, { auth: auth }, function (err, resp) {
+      if (err) { return cb(err); }
+      if (resp.statusCode !== 200) {
+        return cb(new Error('Server responded with ' + resp.statusCode));
+      }
+      var version = resp.body.version;
+      if (!resp.body.couchdb || !version) {
+        return cb(new Error('Server doesn\'t seem to be a CouchDB instance'));
+      }
+      settings.servers[name] = {
+        id: uuid(),
+        name: name,
+        uri: uri,
+        auth: auth,
+        createdAt: new Date()
+      };
+
+      saveConfig(cb);
+      console.log('Added remote server ' + name + ' (v' + version + ') at ' + uri);
+    });
   };
 
   couchmin.add.description = 'Add remote CouchDB server.';
   couchmin.add.args = [
-    { name: 'name' },
-    { name: 'uri' }
+    { name: 'name', required: true, description: 'The server name.' },
+    { name: 'uri', required: true, description: 'The server\'s URL.' }
   ];
 
 
@@ -362,20 +390,10 @@ module.exports = function (options) {
   ];
 
 
-
   //
   // Create local CouchDB server.
   //
   couchmin.create = function (name, cb) {
-    if (arguments.length === 1) {
-      cb = name;
-      name = null;
-    }
-
-    if (!_.isString(name)) {
-      return cb(new TypeError('Server name is required'));
-    }
-
     if (settings.servers[name]) {
       return cb(new Error('Server "' + name + '" already exists'));
     }
@@ -420,8 +438,38 @@ module.exports = function (options) {
 
   couchmin.create.description = 'Create a local CouchDB server.';
   couchmin.create.args = [
-    { name: 'name' }
+    { name: 'name', required: true }
   ];
+  couchmin.create.options = [
+    {
+      name: 'pass',
+      shortcut: 'p',
+      description: 'If passed an admin user is created with the given password.'
+    }
+  ];
+
+
+  couchmin.info = function (cb) {
+    var confdir = settings.confdir;
+    var diskUsage = ('' + cp.execSync('du -sh ' + confdir)).split('\t')[0];
+
+    systemCouch(function (err, couchdb) {
+      if (err) { return cb(err); }
+      console.log('Couchmin'.bold.underline + '\n');
+      console.log('Version: ' + pkg.version);
+      console.log('Conf dir: ' + confdir);
+      console.log('Disk usage: ' + diskUsage);
+      console.log('');
+      console.log('CouchDB'.bold.underline + '\n');
+      console.log('Prefix: ' + couchdb.prefix);
+      console.log('Binary: ' + couchdb.bin);
+      console.log('Default ini: ' + couchdb.ini);
+      cb();
+    });
+  };
+
+  couchmin.info.description = 'Show system info.';
+  couchmin.info.args = [];
 
 
   couchmin.ls = function (cb) {
@@ -435,9 +483,10 @@ module.exports = function (options) {
       var status = '';
       var version = 'unknown';
       var printableUri = '';
+      var active = (settings.active === name) ? '*' : '';
 
       function done() {
-        cb(null, [ name, type, pid, status, version, printableUri ]);
+        cb(null, [ name, active, type, pid, status, version, printableUri ]);
       }
 
       if (type === 'local' && (!uri || !pid)) {
@@ -464,7 +513,7 @@ module.exports = function (options) {
     }, function (err, results) {
       if (err) { return cb(err); }
       if (settings.q !== true) {
-        results.unshift([ 'NAME', 'TYPE', 'PID', 'STATUS', 'VERSION', 'URI' ]);
+        results.unshift([ 'NAME', 'ACTIVE', 'TYPE', 'PID', 'STATUS', 'VERSION', 'URI' ]);
       }
       console.log(table(results));
     });
@@ -647,10 +696,10 @@ module.exports = function (options) {
         '-n',
         '-a ' + couchdb.ini,
         '-a ' + path.join(serverPath, 'local.ini'),
-        //'-r ' + 10 // respawn background process after SECONDS (defaults to no)
+        '-r ' + 5 // respawn background process after SECONDS (defaults to no)
       ];
 
-      var child = spawn(couchdb.bin, args, {
+      var child = cp.spawn(couchdb.bin, args, {
         //stdio: [ 'ignore', process.stdout, process.stderr ],
         detached: true
       });
@@ -698,7 +747,7 @@ module.exports = function (options) {
 
     systemCouch(function (err, couchdb) {
       if (err) { return cb(err); }
-      var child = spawn(couchdb.bin, [
+      var child = cp.spawn(couchdb.bin, [
         '-d',
         '-p ' + getPidPath(name)
       ]);

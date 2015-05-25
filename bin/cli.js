@@ -26,7 +26,7 @@ function done(err) {
 
 function globalOptionsUsage() {
   return [
-    'Options:'.underline.bold,
+    'Global Options:'.underline.bold,
     '',
     '-c, --confdir    Optional path to alternative config dir.',
     '-h, --help       Show this help.',
@@ -35,28 +35,22 @@ function globalOptionsUsage() {
   ].join('\n');
 }
 
-function commandUsage(cmd, description) {
+
+function commandUsage(cmd, showDescription) {
   var fn = couchmin[cmd];
-  var args = fn.args;
-  function argsUsage(cmd) {
-    var str = '';
-    if (args && args.length) {
-      args.forEach(function (arg) {
-        if (str) { str += ' '; }
-        if (arg.required) {
-          str += arg.name;
-        } else {
-          str += '[ ' + arg.name + ' ]';
-        }
-      });
-    }
-    if (description) {
-      str += '\n  ' + fn.description;
-    }
-    return str;
+  var str = cmd;
+
+  if (fn.args && fn.args.length) {
+    fn.args.forEach(function (arg) {
+      str += (arg.required) ? ' <' + arg.name + '>' : ' [ <' + arg.name + '> ]';
+    });
   }
 
-  return cmd.bold + ' ' + argsUsage(cmd);
+  if (showDescription) {
+    str += '\n  ' + fn.description;
+  }
+
+  return str;
 }
 
 
@@ -75,16 +69,24 @@ if (argv.v || argv.version) {
     console.log(('Usage: ' + pkg.name + ' ' +  commandUsage(topic)).bold, '\n');
     console.log((topicCommand.description || 'No description available') + '\n');
     if (topicCommand.args && topicCommand.args.length) {
-      console.log('Arguments'.bold.underline + '\n');
+      console.log('Arguments:'.bold.underline + '\n');
       topicCommand.args.forEach(function (arg) {
         var description = arg.description || 'No description available';
-        console.log(arg.name.bold + '\n  ' + description + '\n');
+        console.log(arg.name.bold + ' ' + (arg.required ? '[Required]' : '[Optional]').grey);
+        console.log('  ' + description + '\n');
+      });
+    }
+    if (topicCommand.options && topicCommand.options.length) {
+      console.log('Options:'.bold.underline + '\n');
+      topicCommand.options.forEach(function (opt) {
+        var description = opt.description || 'No description available';
+        console.log(('--' + opt.name + ', -' + opt.shortcut).bold);
+        console.log('  ' + description + '\n');
       });
     }
     console.log(globalOptionsUsage());
     process.exit(0);
   }
-
 
   console.log(('Usage: ' + pkg.name + ' <command> [ options ]').bold + '\n');
   console.log('Commands:'.bold.underline + '\n');
