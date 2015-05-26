@@ -2,6 +2,10 @@
 
 A command line tool to manage multiple local and remote CouchDB servers.
 
+[![Build Status](https://travis-ci.org/lupomontero/couchmin.svg?branch=master)](https://travis-ci.org/lupomontero/couchmin)
+[![Dependency Status](https://david-dm.org/lupomontero/couchmin.svg?style=flat)](https://david-dm.org/lupomontero/couchmin)
+[![devDependency Status](https://david-dm.org/lupomontero/couchmin/dev-status.png)](https://david-dm.org/lupomontero/couchmin#info=devDependencies)
+
 ## Dependencies
 
 You should have `couchdb`, `node` and `npm` installed and in your `PATH`.
