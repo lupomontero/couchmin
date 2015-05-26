@@ -1,15 +1,25 @@
 #! /usr/bin/env node
 
+var fs = require('fs');
+var path = require('path');
+var url = require('url');
+var mkdirp = require('mkdirp');
 var minimist = require('minimist');
+var which = require('which');
+var request = require('request').defaults({ json: true });
 var colors = require('colors');
 var _ = require('lodash');
 var pkg = require('../package.json');
-var Couchmin = require('../');
 var argv = minimist(process.argv.slice(2));
-var cmd = argv._.shift();
-var options = _.omit(argv, [ '_' ]);
-var couchmin = Couchmin(options);
-var fn = couchmin[cmd];
+var cmdName = argv._.shift() || 'help';
+
+
+var defaults = {
+  confdir: path.join(process.env.HOME, '.couchmin'),
+  servers: {},
+  portRange: [ 5000, 6000 ],
+};
+
 
 
 function done(err) {
@@ -24,87 +34,188 @@ function done(err) {
 }
 
 
-function globalOptionsUsage() {
-  return [
-    'Global Options:'.underline.bold,
-    '',
-    '-c, --confdir    Optional path to alternative config dir.',
-    '-h, --help       Show this help.',
-    '-v, --version    Show version.',
-    '--no-colors      Disable pretty colours in output.'
-  ].join('\n');
-}
-
-
-function commandUsage(cmd, showDescription) {
-  var fn = couchmin[cmd];
-  var str = cmd;
-
-  if (fn.args && fn.args.length) {
-    fn.args.forEach(function (arg) {
-      str += (arg.required) ? ' <' + arg.name + '>' : ' [ <' + arg.name + '> ]';
-    });
-  }
-
-  if (showDescription) {
-    str += '\n  ' + fn.description;
-  }
-
-  return str;
-}
-
-
 if (argv.v || argv.version) {
   console.log(pkg.version);
   process.exit(0);
-} else if (!cmd || cmd === 'help' || argv.h || argv.help) {
-  var topic = argv._[0];
+}
 
-  if (topic) {
-    var topicCommand = couchmin[topic];
-    if (!_.isFunction(topicCommand)) {
-      return done(new Error('Unknown help topic'));
+
+var settings = _.extend({}, defaults);
+
+if (argv.confdir) {
+  settings.confdir = argv.confdir;
+}
+
+mkdirp.sync(settings.confdir);
+
+
+var confFile = path.join(settings.confdir, 'config.json');
+
+if (fs.existsSync(confFile)) {
+  _.extend(settings, require(confFile));
+}
+
+var cmdPath = path.join(__dirname, '../cmd');
+var couchmin = fs.readdirSync(cmdPath).reduce(function (memo, name) {
+  var matches = /^([a-z]+)\.js$/.exec(name);
+  if (matches) {
+    memo[matches[1]] = require(path.join(cmdPath, name));
+  }
+  return memo;
+}, {
+
+  settings: settings,
+
+  saveSettings: function (cb) {
+    fs.writeFile(confFile, JSON.stringify(settings, null, 2), cb);
+  },
+
+  getUri: function (name) {
+    var server = settings.servers[name];
+
+    if (!server) { return; }
+
+    var uri = server.uri;
+
+    if (!uri) {
+      var uriFile = path.join(settings.confdir, 'servers', name, 'couch.uri');
+      if (!fs.existsSync(uriFile)) { return; }
+      uri = ('' + fs.readFileSync(uriFile)).trim();
     }
 
-    console.log(('Usage: ' + pkg.name + ' ' +  commandUsage(topic)).bold, '\n');
-    console.log((topicCommand.description || 'No description available') + '\n');
-    if (topicCommand.args && topicCommand.args.length) {
-      console.log('Arguments:'.bold.underline + '\n');
-      topicCommand.args.forEach(function (arg) {
-        var description = arg.description || 'No description available';
-        console.log(arg.name.bold + ' ' + (arg.required ? '[Required]' : '[Optional]').grey);
-        console.log('  ' + description + '\n');
-      });
+    var urlObj = url.parse(uri);
+
+    if (server.auth) {
+      urlObj.auth = server.auth.user + ':' + server.auth.pass;
     }
-    if (topicCommand.options && topicCommand.options.length) {
-      console.log('Options:'.bold.underline + '\n');
-      topicCommand.options.forEach(function (opt) {
-        var description = opt.description || 'No description available';
-        console.log(('--' + opt.name + ', -' + opt.shortcut).bold);
-        console.log('  ' + description + '\n');
-      });
+
+    uri = url.format(urlObj);
+
+    // remove trailing slash.
+    if (uri[uri.length - 1] === '/') {
+      uri = uri.slice(0, -1);
     }
-    console.log(globalOptionsUsage());
-    process.exit(0);
+
+    return uri;
+  },
+
+  getPort: function () {
+    var port = settings.portRange[0];
+    var max = settings.portRange[1];
+    var ports = _.reduce(settings.servers, function (memo, server) {
+      if (server.port) { memo[server.port] = 1; }
+      return memo;
+    }, {});
+
+    while (port < max) {
+      if (!ports[port]) { return port; }
+      port++;
+    }
+  },
+
+  getPidPath: function (name) {
+    var server = settings.servers[name];
+    return path.join(settings.confdir, 'servers', server.name, 'couch.pid');
+  },
+
+  getPid: function (name) {
+    var pidFile = this.getPidPath(name);
+    if (!fs.existsSync(pidFile)) { return; }
+    return ('' + fs.readFileSync(pidFile)).trim();
+  },
+
+  replicate: function (ee, name, source, target, cb) {
+    ee.emit('replicateStart', name, source, target);
+    request.post(this.getUri(name) + '/_replicate', {
+      body: {
+        source: source,
+        target: target,
+        create_target: true
+      }
+    }, function (err, resp) {
+      if (err) { return cb(err); }
+      var result = { source: source, target: target, value: resp.body || {} };
+      if (resp.statusCode !== 200) {
+        result.value.statusCode = resp.statusCode;
+        console.log(result);
+        ee.emit('replicateFail', name, source, target);
+      } else {
+        ee.emit('replicateSuccess', name, source, target);
+      }
+      cb(null, result);
+    });
+  },
+
+  syncStats: function (results) {
+    var stats = results.reduce(function (memo, result) {
+      if (result.error || (result.value || {}).error) {
+        memo.error += 1;
+      } else {
+        memo.success += 1;
+      }
+      memo.count += 1;
+      return memo;
+    }, { success: 0, error: 0, count: 0 });
+
+    if (stats.error) {
+      console.log(('Done with errors: ' + stats.error + '/' + stats.count).bold.red);
+    } else {
+      console.log(('Done without errors: ' + stats.success + '/' + stats.count).bold.green);
+    }
+  },
+
+  allDbs: function (uri, cb) {
+    request.get(uri + '/_all_dbs', function (err, resp) {
+      if (err) { return cb(err); }
+      if (resp.statusCode !== 200) {
+        err = new Error('Error listing databases on ' + uri);
+        err.code = resp.statusCode;
+        return cb(err);
+      }
+      cb(null, resp.body.filter(function (db) {
+        return [ '_replicator' ].indexOf(db) === -1;
+      }));
+    });
+  },
+
+  systemCouch: function (cb) {
+    which('couchdb', function (err, bin) {
+      if (err) { return cb(err); }
+
+      var couchdb = {
+        prefix: path.resolve(path.dirname(bin), '../'),
+        bin: bin
+      };
+
+      couchdb.ini = path.resolve(couchdb.prefix, './etc/couchdb/default.ini');
+
+      if (bin === '/usr/bin/couchdb') {
+        couchdb.prefix = null;
+        couchdb.ini = '/etc/couchdb/default.ini';
+      }
+
+      cb(null, couchdb);
+    });
   }
 
-  console.log(('Usage: ' + pkg.name + ' <command> [ options ]').bold + '\n');
-  console.log('Commands:'.bold.underline + '\n');
-  Object.keys(couchmin).forEach(function (key) {
-    if (!_.isFunction(couchmin[key])) { return; }
-    console.log(commandUsage(key, true) + '\n');
-  });
-  console.log(globalOptionsUsage());
-  process.exit(0);
+});
+
+
+var cmd;
+
+try {
+  cmd = require('../cmd/' + cmdName);
+} catch (ex) {}
+
+
+if (!cmd || typeof cmd.fn !== 'function') {
+  return done(new Error('Unknown command: ' + cmdName));
 }
 
+cmd.args = cmd.args || [];
 
-if (typeof fn !== 'function') {
-  return done(new Error('Unknown command: ' + cmd));
-}
-
-var maxArgs = fn.args.length;
-var minArgs = fn.args.filter(function (a) { return a.required; }).length;
+var maxArgs = cmd.args.length;
+var minArgs = cmd.args.filter(function (a) { return a.required; }).length;
 
 if (argv._.length > maxArgs) {
   return done(new Error('Too many arguments'));
@@ -115,7 +226,21 @@ if (argv._.length < minArgs) {
 }
 
 
-var ee = fn.apply(couchmin, argv._.concat(done));
+var args = cmd.args.map(function (arg) {
+  return argv._.shift();
+});
+
+
+if (cmd.options && cmd.options.length) {
+  args.push(cmd.options.reduce(function (memo, opt) {
+    memo[opt.name] = argv[opt.name] || argv[opt.shortcut];
+    return memo;
+  }, {}));
+}
+
+
+var ee = cmd.fn.apply(couchmin, args.concat(done));
+
 
 if (!ee || typeof ee.on !== 'function') { return; }
 
