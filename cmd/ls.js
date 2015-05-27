@@ -2,13 +2,28 @@ var url = require('url');
 var async = require('async');
 var request = require('request').defaults({ json: true });
 var table = require('text-table');
+var _ = require('lodash');
 
 
-exports.fn = function (cb) {
+exports.fn = function (options, cb) {
 
   var couchmin = this;
   var settings = couchmin.settings;
   var serverNames = Object.keys(settings.servers);
+
+  var filter = options.filter || [];
+  if (typeof filter === 'string') { filter = [ filter ]; }
+  function filterTest(name, active, type) {
+    return filter.reduce(function (memo, pair) {
+      var parts = pair.split('=');
+      var key = parts[0];
+      var val = parts[1];
+      if (key === 'type' && val !== type) { return false; } 
+      if (key === 'active' && active !== '*') { return false; }
+      if (key === 'name' && !(new RegExp(val)).test(name)) { return false; }
+      return memo;
+    }, true);
+  }
 
   async.map(serverNames, function (name, cb) {
     var server = settings.servers[name];
@@ -20,8 +35,12 @@ exports.fn = function (cb) {
     var printableUri = '';
     var active = (settings.active === name) ? '*' : '';
 
+    if (!filterTest(name, active, type)) {
+      return cb();
+    }
+
     function done() {
-      cb(null, [ name, active, type, pid, status, version, printableUri ]);
+      cb(null, [ name, active, type, status, pid, version, printableUri ]);
     }
 
     if (type === 'local' && (!uri || !pid)) {
@@ -47,13 +66,48 @@ exports.fn = function (cb) {
     });
   }, function (err, results) {
     if (err) { return cb(err); }
-    if (settings.q !== true) {
-      results.unshift([ 'NAME', 'ACTIVE', 'TYPE', 'PID', 'STATUS', 'VERSION', 'URI' ]);
+    results = _.compact(results);
+    if (options.quiet !== true) {
+      results.unshift([ 'NAME', 'ACTIVE', 'TYPE', 'STATUS', 'PID', 'VERSION', 'URI' ]);
+      console.log(table(results));
+    } else {
+      console.log(results.reduce(function (memo, result) {
+        if (memo) { memo += '\n'; }
+        return memo + result[0];
+      }, ''));
     }
-    console.log(table(results));
   });
 
 };
 
 exports.description = 'List CouchDB servers.';
+
+exports.options = [
+  {
+    name: 'quiet',
+    shortcut: 'q',
+    description: 'Only show server names.'
+  },
+  {
+    name: 'filter',
+    shortcut: 'f',
+    description: [
+      'Filter output based on conditions provided.',
+      '',
+      'Examples:'.bold.underline,
+      '',
+      'List all servers:',
+      '',
+      '  couchmin ls',
+      '',
+      'List only local servers:',
+      '',
+      '  couchmin ls -f type=local',
+      '',
+      'List remote servers with names containing "foo":',
+      '',
+      '  couchmin ls -f name=foo -f type=remote',
+    ].join('\n')
+  }
+];
 
