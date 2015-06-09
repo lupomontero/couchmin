@@ -8,7 +8,8 @@ function globalOptionsUsage() {
     '',
     '-c, --confdir    Optional path to alternative config dir.',
     '-v, --version    Show version.',
-    '--no-colors      Disable pretty colours in output.'
+    '--no-color       Disable pretty colours in output.',
+    ''
   ].join('\n');
 }
 
@@ -70,6 +71,15 @@ exports.fn = function (topic, cb) {
     if (!_.isFunction(couchmin[key].fn)) { return; }
     console.log(commandUsage(key, true) + '\n');
   });
+  console.log([
+    'Command specific help'.underline.bold,
+    '',
+    'Each command has it\'s own help text. Use `' + pkg.name + ' help <cmd>`',
+    'to display it. For example:',
+    '',
+    '  ' + pkg.name + ' help ls',
+    ''
+  ].join('\n'));
   console.log(globalOptionsUsage());
   cb();
 
