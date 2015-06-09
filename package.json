@@ -4,6 +4,7 @@
   "author": {
     "name": "Lupo Montero"
   },
+  "license": "MIT",
   "repository": "lupomontero/couchmin",
   "bin": {
     "couchmin": "./bin/cli.js"
