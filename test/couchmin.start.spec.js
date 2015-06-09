@@ -54,6 +54,7 @@ describe('couchmin start', function () {
   });
 
   it('should successfully start a newly created server', function (done) {
+    this.timeout(5 * 1000);
     exec([ 'create', name ], function (err) {
       assert.ok(!err);
       exec([ 'start', name ], function (err, stdout) {
