@@ -1,8 +1,11 @@
 var url = require('url');
 var async = require('async');
-var request = require('request').defaults({ json: true });
 var table = require('text-table');
 var _ = require('lodash');
+var request = require('request').defaults({
+  json: true,
+  timeout: 3 * 1000
+});
 
 
 exports.fn = function (options, cb) {
