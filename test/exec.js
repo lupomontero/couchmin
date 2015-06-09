@@ -11,6 +11,8 @@ module.exports = function (args, options, cb) {
   }
 
   options.env = _.extend({}, process.env, { HOME: confdir }, options.env);
+  args = args || [];
+  args.push('--disable-updates');
   cp.execFile(bin, args, options, cb);
 };
 

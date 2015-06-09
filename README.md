@@ -77,8 +77,9 @@ to display it. For example:
 
 Global Options:
 
--c, --confdir    Optional path to alternative config dir.
--v, --version    Show version.
---no-color       Disable pretty colours in output.
+-c, --confdir      Optional path to alternative config dir.
+-v, --version      Show version.
+--no-color         Disable pretty colours in output.
+--disable-updates  Do not check for couchmin updates.
 ```
 
