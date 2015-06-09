@@ -1,5 +1,8 @@
 var url = require('url');
-var request = require('request').defaults({ json: true });
+var request = require('request').defaults({
+  json: true,
+  timeout: 10 * 1000
+});
 
 
 exports.fn = function (name, uri, cb) {
