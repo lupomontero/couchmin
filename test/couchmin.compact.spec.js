@@ -6,6 +6,8 @@ var start = require('./start');
 
 describe('couchmin compact', function () {
 
+  var name = 'test-compact';
+
   before(function (done) {
     rimraf(exec.confdir, done);
   });
@@ -20,7 +22,7 @@ describe('couchmin compact', function () {
   });
 
   it('should throw when server doesn\'t exist', function (done) {
-    exec([ 'compact', 'non-existent' ], function (err, stdout, stderr) {
+    exec([ 'compact', name ], function (err, stdout, stderr) {
       assert.ok(err);
       assert.equal(err.code, 1);
       assert.ok(/Server doesn't exist/i.test(err.message));
@@ -29,26 +31,26 @@ describe('couchmin compact', function () {
   });
 
   it('should throw when local server has never been started', function (done) {
-    exec([ 'create', 'test-compact' ], function (err) {
+    exec([ 'create', name ], function (err) {
       assert.ok(!err);
-      exec([ 'compact', 'test-compact' ], function (err) {
+      exec([ 'compact', name ], function (err) {
         assert.ok(err);
         assert.equal(err.code, 1);
         assert.ok(/Could not figure out server URL. Is it running?/i.test(err.message));
-        exec([ 'rm', 'test-compact' ], done);
+        exec([ 'rm', name ], done);
       });
     });
   });
 
   it('should compact all dbs on newly created server', function (done) {
     this.timeout(5 * 1000);
-    start('test-compact', function (err) {
+    start(name, function (err) {
       assert.ok(!err);
-      exec([ 'compact', 'test-compact' ], function (err, stdout) {
+      exec([ 'compact', name ], function (err, stdout) {
         assert.ok(!err);
         assert.ok(/Compacting database _users/i.test(stdout));
         assert.ok(/Compacting design doc _design\/_auth in _users/i.test(stdout));
-        exec([ 'rm', 'test-compact' ], done);
+        exec([ 'rm', name ], done);
       });
     });
   });

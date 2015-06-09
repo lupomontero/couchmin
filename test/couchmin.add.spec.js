@@ -6,6 +6,8 @@ var exec = require('./exec');
 
 describe('couchmin add', function () {
 
+  var name = 'test-add';
+
   before(function (done) {
     rimraf(exec.confdir, done);
   });
@@ -19,7 +21,7 @@ describe('couchmin add', function () {
   });
 
   it('should throw when no url', function (done) {
-    exec([ 'add', 'test-add' ], function (err) {
+    exec([ 'add', name ], function (err) {
       assert.equal(err.code, 1);
       assert.ok(/Too few arguments/i.test(err.message));
       done();
@@ -27,7 +29,7 @@ describe('couchmin add', function () {
   });
 
   it('should throw when invalid url', function (done) {
-    exec([ 'add', 'test-add', 'foo' ], function (err, stdout, stderr) {
+    exec([ 'add', name, 'foo' ], function (err, stdout, stderr) {
       assert.ok(err);
       assert.equal(err.code, 1);
       assert.ok(/Invalid URL/i.test(err.message));
@@ -36,7 +38,8 @@ describe('couchmin add', function () {
   });
 
   it('should throw when url is down', function (done) {
-    exec([ 'add', 'test-add', 'http://fooo-151987654-notreally.name' ], function (err, stdout) {
+    this.timeout(11 * 1000);
+    exec([ 'add', name, 'http://fooo-151987654-notreally.name' ], function (err, stdout) {
       assert.ok(err);
       assert.equal(stdout, '');
       assert.ok(/ENOTFOUND/i.test(err.message));
@@ -50,7 +53,7 @@ describe('couchmin add', function () {
       resp.end();
     });
     server.listen(8889, function () {
-      exec([ 'add', 'test-add', 'http://127.0.0.1:8889' ], function (err) {
+      exec([ 'add', name, 'http://127.0.0.1:8889' ], function (err) {
         assert.ok(err);
         assert.ok(/Server responded with 404/i.test(err.message));
         server.close(done);
@@ -64,7 +67,7 @@ describe('couchmin add', function () {
       resp.end();
     });
     server.listen(8889, function () {
-      exec([ 'add', 'test-add', 'http://127.0.0.1:8889' ], function (err) {
+      exec([ 'add', name, 'http://127.0.0.1:8889' ], function (err) {
         assert.ok(err);
         assert.ok(/Server doesn't seem to be a CouchDB instance/i.test(err.message));
         server.close(done);
@@ -73,7 +76,7 @@ describe('couchmin add', function () {
   });
 
   it('should throw when server name exists', function (done) {
-    exec([ 'create', 'test-add' ], function (err) {
+    exec([ 'create', name ], function (err) {
       assert.ok(!err);
       var server = http.createServer(function (req, resp) {
         resp.setHeader('content-type', 'application/json');
@@ -81,10 +84,10 @@ describe('couchmin add', function () {
         resp.end();
       });
       server.listen(8889, function () {
-        exec([ 'add', 'test-add', 'http://127.0.0.1:8889' ], function (err) {
+        exec([ 'add', name, 'http://127.0.0.1:8889' ], function (err) {
           assert.ok(err);
           assert.ok(/already exists/i.test(err.message));
-          exec([ 'rm', 'test-add' ], function (err) {
+          exec([ 'rm', name ], function (err) {
             assert.ok(!err);
             server.close(done);
           });
@@ -100,7 +103,7 @@ describe('couchmin add', function () {
       resp.end();
     });
     server.listen(8889, function () {
-      exec([ 'add', 'test-add', 'http://127.0.0.1:8889' ], function (err, stdout) {
+      exec([ 'add', name, 'http://127.0.0.1:8889' ], function (err, stdout) {
         assert.ok(!err);
         assert.equal(stdout, '');
         server.close(done);
