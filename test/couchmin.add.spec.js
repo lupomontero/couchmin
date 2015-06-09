@@ -1,7 +1,7 @@
 var assert = require('assert');
+var http = require('http');
 var rimraf = require('rimraf');
 var exec = require('./exec');
-var http = require('http');
 
 
 describe('couchmin add', function () {

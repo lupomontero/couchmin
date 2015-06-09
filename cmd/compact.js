@@ -20,6 +20,9 @@ exports.fn = function (name, cb) {
   }
 
   var uri = couchmin.getUri(name);
+  if (!uri) {
+    return cb(new Error('Could not figure out server URL. Is it running?'));
+  }
 
   couchmin.allDbs(uri, function (err, dbs) {
     if (err) { return cb(err); }
