@@ -43,8 +43,7 @@ exports.fn = function (name, cb) {
     ];
 
     var child = cp.spawn(couchdb.bin, args, {
-      //stdio: [ 'ignore', process.stdout, process.stderr ],
-      detached: true
+      stdio: [ 'ignore', process.stdout, process.stderr ]
     });
 
     child.on('close', function (code) {

@@ -30,7 +30,7 @@ describe('couchmin create', function () {
 
       exec([ 'start', 'foo' ], function (err, stdout, stderr) {
         assert.ok(!err);
-        assert.equal(stdout, '');
+        assert.equal(stdout.trim(), 'Apache CouchDB has started, time to relax.');
         assert.equal(stderr, '');
 
         // Wait for server to start...
@@ -65,7 +65,7 @@ describe('couchmin create', function () {
 
       exec([ 'start', name ], function (err, stdout, stderr) {
         assert.ok(!err);
-        assert.equal(stdout, '');
+        assert.equal(stdout.trim(), 'Apache CouchDB has started, time to relax.');
         assert.equal(stderr, '');
 
         // Wait for server to start...
