@@ -68,10 +68,17 @@ stop [ <name> ]
 uri [ <name> ]
   Display server URI.
 
+Command specific help:
+
+Each command has it's own help text. Use `couchmin help <cmd>`
+to display it. For example:
+
+  couchmin help ls
+
 Global Options:
 
 -c, --confdir    Optional path to alternative config dir.
 -v, --version    Show version.
---no-colors      Disable pretty colours in output.
+--no-color       Disable pretty colours in output.
 ```
 

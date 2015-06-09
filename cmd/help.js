@@ -72,7 +72,7 @@ exports.fn = function (topic, cb) {
     console.log(commandUsage(key, true) + '\n');
   });
   console.log([
-    'Command specific help'.underline.bold,
+    'Command specific help:'.underline.bold,
     '',
     'Each command has it\'s own help text. Use `' + pkg.name + ' help <cmd>`',
     'to display it. For example:',
