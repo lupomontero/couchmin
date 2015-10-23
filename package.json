@@ -16,12 +16,12 @@
     "async": "^1.2.1",
     "colors": "^1.1.0",
     "lodash": "^3.9.3",
-    "minimist": "^1.1.1",
+    "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
-    "request": "^2.57.0",
-    "rimraf": "^2.4.0",
+    "request": "^2.65.0",
+    "rimraf": "^2.4.3",
     "text-table": "^0.2.0",
-    "which": "^1.1.1"
+    "which": "^1.2.0"
   },
   "devDependencies": {
     "gulp": "^3.9.0",
