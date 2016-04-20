@@ -1,17 +1,20 @@
+'use strict';
+
+
 exports.fn = function (name, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const self = this;
+  const settings = self.settings;
 
   name = name || settings.active;
 
-  var server = settings.servers[name];
+  const server = settings.servers[name];
 
   if (!server) {
     return cb(new Error('Server doesn\'t exist'));
   }
 
-  console.log(couchmin.getUri(name));
+  console.log(self.getUri(name));
   cb();
 
 };

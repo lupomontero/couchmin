@@ -1,38 +1,50 @@
-var async = require('async');
-var request = require('request').defaults({ json: true });
+'use strict';
+
+
+const Async = require('async');
+const Request = require('request').defaults({ json: true });
 
 
 exports.fn = function (name, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const self = this;
+  const settings = self.settings;
 
   name = name || settings.active;
+
 
   if (!name) {
     return cb(new Error('No server selected'));
   }
 
-  var server = settings.servers[name];
+  const server = settings.servers[name];
 
   if (!server) {
     return cb(new Error('Server doesn\'t exist'));
   }
 
-  var uri = couchmin.getUri(name);
+  const uri = self.getUri(name);
 
-  couchmin.allDbs(uri, function (err, dbs) {
-    if (err) { return cb(err); }
-    async.each(dbs, function (db, cb) {
-      request({
+  self.allDbs(uri, (err, dbs) => {
+
+    if (err) {
+      return cb(err);
+    }
+
+    Async.each(dbs, (db, cb) => {
+
+      Request({
         method: 'POST',
         url: uri + '/' + encodeURIComponent(db) + '/_view_cleanup',
         headers: {
           'Content-Type': 'application/json'
         }
-      }, function (err, resp) {
-        if (err) { return cb(err); }
-        if (resp.statusCode > 202) {
+      }, (err, resp) => {
+
+        if (err) {
+          return cb(err);
+        }
+        else if (resp.statusCode > 202) {
           return cb(new Error('Failed to start view cleanup for ' + db));
         }
         console.log('Started cleanup task for database: ' + db);
@@ -42,6 +54,7 @@ exports.fn = function (name, cb) {
   });
 
 };
+
 
 exports.description = 'Remove index files no longer required.';
 exports.args = [

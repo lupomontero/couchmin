@@ -1,26 +1,29 @@
-var fs = require('fs');
-var path = require('path');
-var mkdirp = require('mkdirp');
+'use strict';
+
+
+const Fs = require('fs');
+const Path = require('path');
+const Mkdirp = require('mkdirp');
 
 
 exports.fn = function (name, options, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const self = this;
+  const settings = self.settings;
 
   if (settings.servers[name]) {
     return cb(new Error('Server "' + name + '" already exists'));
   }
 
-  var server = {
+  const server = {
     name: name,
-    port: couchmin.getPort(),
+    port: self.getPort(),
     createdAt: new Date()
   };
 
-  var serverPath = path.join(settings.confdir, 'servers', server.name);
-  var localIni = path.join(serverPath, 'local.ini');
-  var localIniContents = [
+  const serverPath = Path.join(settings.confdir, 'servers', server.name);
+  const localIni = Path.join(serverPath, 'local.ini');
+  let localIniContents = [
     '[couchdb]',
     'database_dir=' + serverPath,
     'view_index_dir=' + serverPath,
@@ -38,12 +41,20 @@ exports.fn = function (name, options, cb) {
     localIniContents += '\n\n[admins]\nadmin = ' + options.pass;
   }
 
-  mkdirp(path.join(serverPath), function (err) {
-    if (err) { return cb(err); }
-    fs.writeFile(localIni, localIniContents, function (err) {
-      if (err) { return cb(err); }
+  Mkdirp(Path.join(serverPath), (err) => {
+
+    if (err) {
+      return cb(err);
+    }
+
+    Fs.writeFile(localIni, localIniContents, (err) => {
+
+      if (err) {
+        return cb(err);
+      }
+
       settings.servers[name] = server;
-      couchmin.saveSettings(cb);
+      self.saveSettings(cb);
     });
   });
 

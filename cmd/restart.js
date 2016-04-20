@@ -1,15 +1,21 @@
+'use strict';
+
+
 exports.fn = function (name, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const self = this;
+  const settings = self.settings;
 
   name = name || settings.active;
 
-  var stop = couchmin.stop.fn.bind(couchmin);
-  var start = couchmin.start.fn.bind(couchmin);
+  const stop = self.stop.fn.bind(self);
+  const start = self.start.fn.bind(self);
 
-  stop(name, function (err) {
-    if (err) { return cb(err); }
+  stop(name, (err) => {
+
+    if (err) {
+      return cb(err);
+    }
     start(name, cb);
   });
 

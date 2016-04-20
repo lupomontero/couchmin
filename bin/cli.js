@@ -1,34 +1,35 @@
 #! /usr/bin/env node
+'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var url = require('url');
-var async = require('async');
-var mkdirp = require('mkdirp');
-var minimist = require('minimist');
-var request = require('request').defaults({ json: true });
-var colors = require('colors');
-var _ = require('lodash');
-var pkg = require('../package.json');
-var Couchmin = require('../');
-var argv = minimist(process.argv.slice(2));
-var cmdName = argv._.shift() || 'help';
+const Fs = require('fs');
+const Path = require('path');
+const Mkdirp = require('mkdirp');
+const Minimist = require('minimist');
+const Request = require('request').defaults({ json: true });
+const Colors = require('colors');
+const _ = require('lodash');
+const Pkg = require('../package.json');
+const Couchmin = require('../');
+
+const argv = Minimist(process.argv.slice(2));
+const cmdName = argv._.shift() || 'help';
 
 
-var defaults = {
-  confdir: path.join(process.env.HOME, '.couchmin'),
+const defaults = {
+  confdir: Path.join(process.env.HOME, '.couchmin'),
   updates: {
     enabled: true,
     lastCheck: null
   },
   servers: {},
-  portRange: [ 5000, 6000 ],
+  portRange: [5000, 6000]
 };
 
 
 
-function done(err) {
-  var code = 0;
+const done = function (err) {
+
+  let code = 0;
 
   if (err) {
     console.error(err.message.red);
@@ -36,12 +37,13 @@ function done(err) {
   }
 
   process.exit(code);
-}
+};
 
 
-function run() {
-  var couchmin = Couchmin(settings, confFile);
-  var cmd = couchmin[cmdName];
+const run = function () {
+
+  const couchmin = Couchmin(settings, confFile);
+  const cmd = couchmin[cmdName];
 
   if (!cmd || typeof cmd.fn !== 'function') {
     return done(new Error('Unknown command: ' + cmdName));
@@ -49,8 +51,11 @@ function run() {
 
   cmd.args = cmd.args || [];
 
-  var maxArgs = cmd.args.length;
-  var minArgs = cmd.args.filter(function (a) { return a.required; }).length;
+  const maxArgs = cmd.args.length;
+  const minArgs = cmd.args.filter((a) => {
+
+    return a.required;
+  }).length;
 
   if (argv._.length > maxArgs) {
     return done(new Error('Too many arguments'));
@@ -61,46 +66,55 @@ function run() {
   }
 
 
-  var args = cmd.args.map(function (arg) {
+  const args = cmd.args.map((arg) => {
+
     return argv._.shift();
   });
 
 
   if (cmd.options && cmd.options.length) {
-    args.push(cmd.options.reduce(function (memo, opt) {
+    args.push(cmd.options.reduce((memo, opt) => {
+
       memo[opt.name] = argv[opt.name] || argv[opt.shortcut];
       return memo;
     }, {}));
   }
 
-  var ee = cmd.fn.apply(couchmin, args.concat(done));
+  const ee = cmd.fn.apply(couchmin, args.concat(done));
 
-  if (!ee || typeof ee.on !== 'function') { return; }
+  if (!ee || typeof ee.on !== 'function') {
+    return;
+  }
 
-  ee.on('pullStart', function (local, remote, dbs) {
+  ee.on('pullStart', (local, remote, dbs) => {
+
     console.log('Found ' + dbs.length + ' database(s) to pull');
   });
 
-  ee.on('pushStart', function (local, remote, dbs) {
+  ee.on('pushStart', (local, remote, dbs) => {
+
     console.log('Found ' + dbs.length + ' database(s) to push');
   });
 
-  ee.on('replicateStart', function (local, source, target) {
+  ee.on('replicateStart', (local, source, target) => {
+
     console.log('==>'.grey + ' Replicating database from ' + source + ' to ' + target + '...');
   });
 
-  ee.on('replicateFail', function (local, source, target) {
+  ee.on('replicateFail', (local, source, target) => {
+
     console.error('<=='.red + ' Failed to replicate database ' + source + ' to ' + target);
   });
 
-  ee.on('replicateSuccess', function (local, source, target) {
+  ee.on('replicateSuccess', (local, source, target) => {
+
     console.log('<=='.green + ' Synced database ' + source + ' to ' + target);
   });
-}
+};
 
 
 if (argv.v || argv.version) {
-  console.log(pkg.version);
+  console.log(Pkg.version);
   process.exit(0);
 }
 
@@ -108,11 +122,14 @@ if (argv.v || argv.version) {
 //
 // Init settings.
 //
-var settings = _.extend({}, defaults);
-if (argv.confdir) { settings.confdir = argv.confdir; }
-mkdirp.sync(settings.confdir);
-var confFile = path.join(settings.confdir, 'config.json');
-if (fs.existsSync(confFile)) {
+const settings = _.extend({}, defaults);
+if (argv.confdir) {
+  settings.confdir = argv.confdir;
+}
+
+Mkdirp.sync(settings.confdir);
+const confFile = Path.join(settings.confdir, 'config.json');
+if (Fs.existsSync(confFile)) {
   _.extend(settings, require(confFile));
 }
 
@@ -120,10 +137,11 @@ if (fs.existsSync(confFile)) {
 //
 // Check for newer couchmin version if needed.
 //
-var updatesDisabled = settings.updates.enabled === false || argv['disable-updates'] === true;
-var twentyfourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-var outdated = (settings.updates.latest !== pkg.version);
-var lastCheck = settings.updates.lastCheck;
+const updatesDisabled = settings.updates.enabled === false || argv['disable-updates'] === true;
+const twentyfourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+const outdated = (settings.updates.latest !== Pkg.version);
+const lastCheck = settings.updates.lastCheck;
+
 if (typeof lastCheck === 'string') {
   lastCheck = new Date(lastCheck);
 }
@@ -132,24 +150,36 @@ if (updatesDisabled || (!outdated && lastCheck && +lastCheck >= twentyfourHoursA
   return run();
 }
 
-request('https://registry.npmjs.org/couchmin', function (err, resp) {
-  var latest = (((resp || {}).body || {})['dist-tags'] || {}).latest;
-  if (!latest) { return run(); } // Fail silently
+Request('https://registry.npmjs.org/couchmin', (err, resp) => {
+
+  if (err) {
+    return run(); // Fail silently
+  }
+
+  const latest = (((resp || {}).body || {})['dist-tags'] || {}).latest;
+
+  if (!latest) {
+    return run(); // Fail silently
+  }
 
   settings.updates.latest = latest;
   settings.updates.lastCheck = new Date();
-  fs.writeFileSync(confFile, JSON.stringify(settings, null, 2));
+  Fs.writeFileSync(confFile, JSON.stringify(settings, null, 2));
 
-  if (latest === pkg.version) { return run(); }
+  if (latest === Pkg.version) {
+    return run();
+  }
 
   [
-    'A new version of ' + pkg.name + ' (' + latest + ') is available.',
-    'You are currently running ' + pkg.version + '.',
+    'A new version of ' + Pkg.name + ' (' + latest + ') is available.',
+    'You are currently running ' + Pkg.version + '.',
     'To upgrade simply run the following command:',
     'npm upgrade -g couchmin'
-  ].forEach(function (line) {
+  ].forEach((line) => {
+
     console.error('warning: '.yellow + line);
   });
+
   process.exit(2);
 });
 

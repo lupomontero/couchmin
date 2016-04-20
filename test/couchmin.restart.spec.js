@@ -1,12 +1,17 @@
-var assert = require('assert');
-var exec = require('./exec');
+'use strict';
 
 
-describe('couchmin restart', function () {
+const Assert = require('assert');
+const Exec = require('./exec');
 
-  it.skip('should ...', function (done) {
-    exec([ 'restart' ], function (err, stdout, stderr) {
-      console.log(arguments);
+
+describe('couchmin restart', () => {
+
+  it.skip('should ...', (done) => {
+
+    Exec(['restart'], (err, stdout, stderr) => {
+
+      Assert.ok(!err);
       done();
     });
   });

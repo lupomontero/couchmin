@@ -1,19 +1,25 @@
-var assert = require('assert');
-var rimraf = require('rimraf');
-var exec = require('./exec');
+'use strict';
 
 
-describe('couchmin info', function () {
+const Assert = require('assert');
+const Rimraf = require('rimraf');
+const Exec = require('./exec');
 
-  before(function (done) {
-    rimraf(exec.confdir, done);
+
+describe('couchmin info', () => {
+
+  before((done) => {
+
+    Rimraf(Exec.confdir, done);
   });
 
-  it('should display system info', function (done) {
-    exec([ 'info' ], function (err, stdout, stderr) {
-      assert.ok(!err);
-      assert.ok(/Couchmin/i.test(stdout));
-      assert.equal(stderr, '');
+  it('should display system info', (done) => {
+
+    Exec(['info'], (err, stdout, stderr) => {
+
+      Assert.ok(!err);
+      Assert.ok(/Couchmin/i.test(stdout));
+      Assert.equal(stderr, '');
       done();
     });
   });

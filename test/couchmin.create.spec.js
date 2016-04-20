@@ -1,50 +1,64 @@
-var assert = require('assert');
-var request = require('request').defaults({ json: true });
-var rimraf = require('rimraf');
-var exec = require('./exec');
+'use strict';
 
 
-describe('couchmin create', function () {
+const Assert = require('assert');
+const Request = require('request').defaults({ json: true });
+const Rimraf = require('rimraf');
+const Exec = require('./exec');
 
-  before(function (done) {
-    rimraf(exec.confdir, done);
+
+describe('couchmin create', () => {
+
+  before((done) => {
+
+    Rimraf(Exec.confdir, done);
   });
 
-  it('should throw when too few arguments', function (done) {
-    exec([ 'create' ], function (err, stdout, stderr) {
-      assert.equal(err.code, 1);
-      assert.ok(/Too few arguments/i.test(err.message));
-      assert.equal(stdout, '');
-      assert.equal(stderr.trim(), 'Too few arguments');
+
+  it('should throw when too few arguments', (done) => {
+
+    Exec(['create'], (err, stdout, stderr) => {
+
+      Assert.equal(err.code, 1);
+      Assert.ok(/Too few arguments/i.test(err.message));
+      Assert.equal(stdout, '');
+      Assert.equal(stderr.trim(), 'Too few arguments');
       done();
     });
   });
 
+
   it('should create server in admin party by default', function (done) {
+
     this.timeout(10 * 1000);
 
-    exec([ 'create', 'foo' ], function (err, stdout, stderr) {
-      assert.ok(!err);
-      assert.equal(stdout, '');
-      assert.equal(stderr, '');
+    Exec(['create', 'foo'], (err, stdout, stderr) => {
 
-      exec([ 'start', 'foo' ], function (err, stdout, stderr) {
-        assert.ok(!err);
-        assert.equal(stdout.trim(), 'Apache CouchDB has started, time to relax.');
-        assert.equal(stderr, '');
+      Assert.ok(!err);
+      Assert.equal(stdout, '');
+      Assert.equal(stderr, '');
+
+      Exec(['start', 'foo'], (err, stdout, stderr) => {
+
+        Assert.ok(!err);
+        Assert.equal(stdout.trim(), 'Apache CouchDB has started, time to relax.');
+        Assert.equal(stderr, '');
 
         // Wait for server to start...
-        setTimeout(function () {
-          request('http://127.0.0.1:5000/_session', function (err, resp) {
-            assert.ok(!err);
-            assert.equal(resp.body.ok, true);
-            assert.equal(resp.body.userCtx.name, null);
-            assert.deepEqual(resp.body.userCtx.roles, [ '_admin' ]);
+        setTimeout(() => {
 
-            exec([ 'stop', 'foo' ], function (err, stdout, stderr) {
-              assert.ok(!err);
-              assert.equal(stdout, '');
-              assert.equal(stderr, '');
+          Request('http://127.0.0.1:5000/_session', (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.body.ok, true);
+            Assert.equal(resp.body.userCtx.name, null);
+            Assert.deepEqual(resp.body.userCtx.roles, ['_admin']);
+
+            Exec(['stop', 'foo'], (err, stdout, stderr) => {
+
+              Assert.ok(!err);
+              Assert.equal(stdout, '');
+              Assert.equal(stderr, '');
               done();
             });
           });
@@ -53,33 +67,40 @@ describe('couchmin create', function () {
     });
   });
 
+
   it('should create server with admin when pass present', function (done) {
+
     this.timeout(10 * 1000);
 
-    var name = 'foo2';
+    const name = 'foo2';
 
-    exec([ 'create', name, '--pass', 'secret' ], function (err, stdout, stderr) {
-      assert.ok(!err);
-      assert.equal(stdout, '');
-      assert.equal(stderr, '');
+    Exec(['create', name, '--pass', 'secret'], (err, stdout, stderr) => {
 
-      exec([ 'start', name ], function (err, stdout, stderr) {
-        assert.ok(!err);
-        assert.equal(stdout.trim(), 'Apache CouchDB has started, time to relax.');
-        assert.equal(stderr, '');
+      Assert.ok(!err);
+      Assert.equal(stdout, '');
+      Assert.equal(stderr, '');
+
+      Exec(['start', name], (err, stdout, stderr) => {
+
+        Assert.ok(!err);
+        Assert.equal(stdout.trim(), 'Apache CouchDB has started, time to relax.');
+        Assert.equal(stderr, '');
 
         // Wait for server to start...
-        setTimeout(function () {
-          request('http://admin:secret@127.0.0.1:5001/_session', function (err, resp) {
-            assert.ok(!err);
-            assert.equal(resp.body.ok, true);
-            assert.equal(resp.body.userCtx.name, 'admin');
-            assert.deepEqual(resp.body.userCtx.roles, [ '_admin' ]);
+        setTimeout(() => {
 
-            exec([ 'stop', name ], function (err, stdout, stderr) {
-              assert.ok(!err);
-              assert.equal(stdout, '');
-              assert.equal(stderr, '');
+          Request('http://admin:secret@127.0.0.1:5001/_session', (err, resp) => {
+
+            Assert.ok(!err);
+            Assert.equal(resp.body.ok, true);
+            Assert.equal(resp.body.userCtx.name, 'admin');
+            Assert.deepEqual(resp.body.userCtx.roles, ['_admin']);
+
+            Exec(['stop', name], (err, stdout, stderr) => {
+
+              Assert.ok(!err);
+              Assert.equal(stdout, '');
+              Assert.equal(stderr, '');
               done();
             });
           });

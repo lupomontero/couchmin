@@ -10,23 +10,24 @@
     "couchmin": "./bin/cli.js"
   },
   "scripts": {
-    "test": "gulp test"
+    "pretest": "./node_modules/.bin/eslint .",
+    "test": "./node_modules/.bin/mocha test"
   },
   "dependencies": {
-    "async": "^1.2.1",
+    "async": "^1.5.2",
     "colors": "^1.1.0",
-    "lodash": "^3.9.3",
+    "lodash": "^4.11.1",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
-    "request": "^2.65.0",
-    "rimraf": "^2.4.3",
+    "request": "^2.72.0",
+    "rimraf": "^2.5.2",
     "text-table": "^0.2.0",
-    "which": "^1.2.0"
+    "which": "^1.2.4"
   },
   "devDependencies": {
-    "gulp": "^3.9.0",
-    "gulp-jshint": "^1.11.0",
-    "gulp-mocha": "^2.1.1",
-    "jshint-stylish": "^2.0.0"
+    "eslint": "^2.8.0",
+    "eslint-config-hapi": "^9.1.0",
+    "eslint-plugin-hapi": "^4.0.0",
+    "mocha": "^2.4.5"
   }
 }

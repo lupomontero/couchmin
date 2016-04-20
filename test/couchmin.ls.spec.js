@@ -1,59 +1,75 @@
-var assert = require('assert');
-var rimraf = require('rimraf');
-var async = require('async');
-var _ = require('lodash');
-var exec = require('./exec');
+'use strict';
 
 
-function assertHeadingsLine(line) {
-  assert.deepEqual(_.compact(line.trim().split(' ')), [
+const Assert = require('assert');
+const Rimraf = require('rimraf');
+const Async = require('async');
+const _ = require('lodash');
+const Exec = require('./exec');
+
+
+const assertHeadingsLine = function (line) {
+
+  Assert.deepEqual(_.compact(line.trim().split(' ')), [
     'NAME', 'ACTIVE', 'TYPE', 'STATUS', 'PID', 'VERSION', 'URI'
   ]);
-}
+};
 
-describe('couchmin ls', function () {
+describe('couchmin ls', () => {
 
-  beforeEach(function (done) {
-    rimraf(exec.confdir, done);
+  beforeEach((done) => {
+
+    Rimraf(Exec.confdir, done);
   });
 
-  it('should show headers and no results when no servers', function (done) {
-    exec([ 'ls' ], function (err, stdout, stderr) {
-      assert.ok(!err);
+
+  it('should show headers and no results when no servers', (done) => {
+
+    Exec(['ls'], (err, stdout, stderr) => {
+
+      Assert.ok(!err);
       assertHeadingsLine(stdout);
-      assert.equal(stderr, '');
+      Assert.equal(stderr, '');
       done();
     });
   });
 
-  it('should list servers', function (done) {
-    exec([ 'create', 'test-ls' ], function (err) {
-      assert.ok(!err);
-      exec([ 'ls' ], function (err, stdout) {
-        assert.ok(!err);
-        var lines = stdout.trim().split('\n');
-        assert.equal(lines.length, 2);
+
+  it('should list servers', (done) => {
+
+    Exec(['create', 'test-ls'], (err) => {
+
+      Assert.ok(!err);
+
+      Exec(['ls'], (err, stdout) => {
+
+        Assert.ok(!err);
+        const lines = stdout.trim().split('\n');
+        Assert.equal(lines.length, 2);
         assertHeadingsLine(lines[0]);
-        assert.ok(/^test-ls/.test(lines[1]));
+        Assert.ok(/^test-ls/.test(lines[1]));
         done();
       });
     });
   });
 
-  it('should filter by name', function (done) {
-    async.series([
-      async.apply(exec, [ 'create', 'test-ls-1' ]),
-      async.apply(exec, [ 'create', 'test-ls-2' ]),
-      async.apply(exec, [ 'create', 'oh-my-god' ])
-    ], function (err) {
-      assert.ok(!err);
-      exec([ 'ls', '-f', 'name=test-ls' ], function (err, stdout) {
-        assert.ok(!err);
-        var lines = stdout.trim().split('\n');
-        assert.equal(lines.length, 3);
+  it('should filter by name', (done) => {
+
+    Async.series([
+      Async.apply(Exec, ['create', 'test-ls-1']),
+      Async.apply(Exec, ['create', 'test-ls-2']),
+      Async.apply(Exec, ['create', 'oh-my-god'])
+    ], (err) => {
+
+      Assert.ok(!err);
+      Exec(['ls', '-f', 'name=test-ls'], (err, stdout) => {
+
+        Assert.ok(!err);
+        const lines = stdout.trim().split('\n');
+        Assert.equal(lines.length, 3);
         assertHeadingsLine(lines[0]);
-        assert.ok(/test-ls/.test(lines[1]));
-        assert.ok(/test-ls/.test(lines[2]));
+        Assert.ok(/test-ls/.test(lines[1]));
+        Assert.ok(/test-ls/.test(lines[2]));
         done();
       });
     });
@@ -61,18 +77,21 @@ describe('couchmin ls', function () {
 
   it('should filter by type');
 
-  it('should only show server names when quiet flag present', function (done) {
-    async.series([
-      async.apply(exec, [ 'create', 'test-ls-1' ]),
-      async.apply(exec, [ 'create', 'test-ls-2' ]),
-      async.apply(exec, [ 'create', 'oh-my-god' ])
-    ], function (err) {
-      assert.ok(!err);
-      exec([ 'ls', '-q' ], function (err, stdout) {
-        assert.ok(!err);
-        var lines = stdout.trim().split('\n');
-        assert.equal(lines.length, 3);
-        assert.deepEqual(lines, [ 'test-ls-1', 'test-ls-2', 'oh-my-god' ]);
+  it('should only show server names when quiet flag present', (done) => {
+
+    Async.series([
+      Async.apply(Exec, ['create', 'test-ls-1']),
+      Async.apply(Exec, ['create', 'test-ls-2']),
+      Async.apply(Exec, ['create', 'oh-my-god'])
+    ], (err) => {
+
+      Assert.ok(!err);
+      Exec(['ls', '-q'], (err, stdout) => {
+
+        Assert.ok(!err);
+        const lines = stdout.trim().split('\n');
+        Assert.equal(lines.length, 3);
+        Assert.deepEqual(lines, ['test-ls-1', 'test-ls-2', 'oh-my-god']);
         done();
       });
     });

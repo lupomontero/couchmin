@@ -1,11 +1,14 @@
-var path = require('path');
-var rimraf = require('rimraf');
+'use strict';
+
+
+const Path = require('path');
+const Rimraf = require('rimraf');
 
 
 exports.fn = function (name, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const self = this;
+  const settings = self.settings;
 
   name = name || settings.active;
 
@@ -13,16 +16,20 @@ exports.fn = function (name, cb) {
     return cb(new Error('Server name is required'));
   }
 
-  var server = settings.servers[name];
+  const server = settings.servers[name];
 
   if (!server) {
     return cb(new Error('Server doesn\'t exist'));
   }
 
 
-  function remove() {
-    rimraf(path.join(settings.confdir, 'servers', server.name), function (err) {
-      if (err) { return cb(err); }
+  const remove = function () {
+
+    Rimraf(Path.join(settings.confdir, 'servers', server.name), (err) => {
+
+      if (err) {
+        return cb(err);
+      }
 
       delete settings.servers[name];
 
@@ -30,19 +37,24 @@ exports.fn = function (name, cb) {
         delete settings.active;
       }
 
-      couchmin.saveSettings(cb);
+      self.saveSettings(cb);
     });
-  }
+  };
 
 
-  var pid = couchmin.getPid(name);
+  const pid = self.getPid(name);
 
   // If not running we can go ahead and remove the server.
-  if (!pid) { return remove(); }
+  if (!pid) {
+    return remove();
+  }
 
   // If running, stop the server first.
-  couchmin.stop.fn.call(couchmin, name, function (err) {
-    if (err) { return cb(err); }
+  self.stop.fn.call(self, name, (err) => {
+
+    if (err) {
+      return cb(err);
+    }
     remove();
   });
 

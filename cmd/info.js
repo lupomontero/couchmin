@@ -1,22 +1,32 @@
-var cp = require('child_process');
-var pkg = require('../package.json');
+'use strict';
+
+
+const ChildProcess = require('child_process');
+const Pkg = require('../package.json');
 
 
 exports.fn = function (cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
-  var confdir = settings.confdir;
+  const self = this;
+  const settings = self.settings;
+  const confdir = settings.confdir;
 
-  couchmin.systemCouch(function (err, couchdb) {
-    if (err) { return cb(err); }
-    cp.exec('du -sh ' + confdir, function (err, stdout) {
-      if (err) { return cb(err); }
+  self.systemCouch((err, couchdb) => {
 
-      var diskUsage = ('' + stdout).split('\t')[0];
+    if (err) {
+      return cb(err);
+    }
+
+    ChildProcess.exec('du -sh ' + confdir, (err, stdout) => {
+
+      if (err) {
+        return cb(err);
+      }
+
+      const diskUsage = ('' + stdout).split('\t')[0];
 
       console.log('Couchmin'.bold.underline + '\n');
-      console.log('Version: ' + pkg.version);
+      console.log('Version: ' + Pkg.version);
       console.log('Conf dir: ' + confdir);
       console.log('Disk usage: ' + diskUsage);
       console.log('');

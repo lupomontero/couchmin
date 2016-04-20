@@ -1,31 +1,37 @@
-var _ = require('lodash');
-var pkg = require('../package.json');
+'use strict';
 
 
-function globalOptionsUsage() {
+const _ = require('lodash');
+const Pkg = require('../package.json');
+
+
+const globalOptionsUsage = function () {
+
   return [
     'Global Options:'.underline.bold,
     '',
     '-c, --confdir      Optional path to alternative config dir.',
     '-v, --version      Show version.',
     '--no-color         Disable pretty colours in output.',
-    '--disable-updates  Do not check for ' + pkg.name + ' updates.',
+    '--disable-updates  Do not check for ' + Pkg.name + ' updates.',
     ''
   ].join('\n');
-}
+};
 
 
 exports.fn = function (topic, cb) {
 
-  var couchmin = this;
+  const self = this;
 
 
-  function commandUsage(cmd, showDescription) {
-    var fn = couchmin[cmd];
-    var str = cmd;
+  const commandUsage = function (cmd, showDescription) {
+
+    const fn = self[cmd];
+    let str = cmd;
 
     if (fn.args && fn.args.length) {
-      fn.args.forEach(function (arg) {
+      fn.args.forEach((arg) => {
+
         str += (arg.required) ? ' <' + arg.name + '>' : ' [ <' + arg.name + '> ]';
       });
     }
@@ -35,29 +41,31 @@ exports.fn = function (topic, cb) {
     }
 
     return str;
-  }
+  };
 
 
   if (topic) {
-    var topicCommand = couchmin[topic];
+    const topicCommand = self[topic];
     if (!_.isFunction(topicCommand.fn)) {
       return cb(new Error('Unknown help topic: ' + topic));
     }
 
-    console.log(('Usage: ' + pkg.name + ' ' +  commandUsage(topic)).bold, '\n');
+    console.log(('Usage: ' + Pkg.name + ' ' +  commandUsage(topic)).bold, '\n');
     console.log((topicCommand.description || 'No description available') + '\n');
     if (topicCommand.args && topicCommand.args.length) {
       console.log('Arguments:'.bold.underline + '\n');
-      topicCommand.args.forEach(function (arg) {
-        var description = arg.description || 'No description available';
+      topicCommand.args.forEach((arg) => {
+
+        const description = arg.description || 'No description available';
         console.log(arg.name.bold + ' ' + (arg.required ? '[Required]' : '[Optional]').grey);
         console.log('  ' + description + '\n');
       });
     }
     if (topicCommand.options && topicCommand.options.length) {
       console.log('Options:'.bold.underline + '\n');
-      topicCommand.options.forEach(function (opt) {
-        var description = opt.description || 'No description available';
+      topicCommand.options.forEach((opt) => {
+
+        const description = opt.description || 'No description available';
         console.log(('--' + opt.name + ', -' + opt.shortcut).bold);
         console.log('  ' + description + '\n');
       });
@@ -66,19 +74,22 @@ exports.fn = function (topic, cb) {
     return cb();
   }
 
-  console.log(('Usage: ' + pkg.name + ' [ options ] <command>').bold + '\n');
+  console.log(('Usage: ' + Pkg.name + ' [ options ] <command>').bold + '\n');
   console.log('Commands:'.bold.underline + '\n');
-  Object.keys(couchmin).forEach(function (key) {
-    if (!_.isFunction(couchmin[key].fn)) { return; }
+  Object.keys(self).forEach((key) => {
+
+    if (!_.isFunction(self[key].fn)) {
+      return;
+    }
     console.log(commandUsage(key, true) + '\n');
   });
   console.log([
     'Command specific help:'.underline.bold,
     '',
-    'Each command has it\'s own help text. Use `' + pkg.name + ' help <cmd>`',
+    'Each command has it\'s own help text. Use `' + Pkg.name + ' help <cmd>`',
     'to display it. For example:',
     '',
-    '  ' + pkg.name + ' help ls',
+    '  ' + Pkg.name + ' help ls',
     ''
   ].join('\n'));
   console.log(globalOptionsUsage());

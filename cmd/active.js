@@ -1,7 +1,9 @@
+'use strict';
+
+
 exports.fn = function (name, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const settings = this.settings;
 
   if (!name) {
     console.log(settings.active || 'none');
@@ -13,7 +15,7 @@ exports.fn = function (name, cb) {
   }
 
   settings.active = name;
-  couchmin.saveSettings(cb);
+  this.saveSettings(cb);
 };
 
 exports.description = 'Get or set the active CouchDB server.';

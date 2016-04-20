@@ -1,5 +1,8 @@
-var url = require('url');
-var request = require('request').defaults({
+'use strict';
+
+
+const Url = require('url');
+const Request = require('request').defaults({
   json: true,
   timeout: 10 * 1000
 });
@@ -7,11 +10,11 @@ var request = require('request').defaults({
 
 exports.fn = function (name, uri, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
-  var urlObj = url.parse(uri);
-  var authParts = (urlObj.auth || '').split(':');
-  var auth;
+  const self = this;
+  const settings = self.settings;
+  const urlObj = Url.parse(uri);
+  const authParts = (urlObj.auth || '').split(':');
+  let auth;
 
   if (settings.servers[name]) {
     return cb(new Error('Server "' + name + '" already exists'));
@@ -29,16 +32,21 @@ exports.fn = function (name, uri, cb) {
   uri = urlObj.protocol + '//' + urlObj.host + urlObj.path;
 
   // Remove trailing slash.
-  if (/\/$/.test(uri)) { uri = uri.slice(0, -1); }
+  if (/\/$/.test(uri)) {
+    uri = uri.slice(0, -1);
+  }
 
-  request(uri, { auth: auth }, function (err, resp) {
-    if (err) { return cb(err); }
+  Request(uri, { auth: auth }, (err, resp) => {
+
+    if (err) {
+      return cb(err);
+    }
 
     if (resp.statusCode !== 200) {
       return cb(new Error('Server responded with ' + resp.statusCode));
     }
 
-    var version = resp.body.version;
+    const version = resp.body.version;
     if (!resp.body.couchdb || !version) {
       return cb(new Error('Server doesn\'t seem to be a CouchDB instance'));
     }
@@ -50,7 +58,7 @@ exports.fn = function (name, uri, cb) {
       createdAt: new Date()
     };
 
-    couchmin.saveSettings(cb);
+    self.saveSettings(cb);
   });
 
 };

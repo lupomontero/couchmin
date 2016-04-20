@@ -1,10 +1,13 @@
-var cp = require('child_process');
+'use strict';
+
+
+const ChildProcess = require('child_process');
 
 
 exports.fn = function (name, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
+  const self = this;
+  const settings = self.settings;
 
   name = name || settings.active;
 
@@ -12,7 +15,7 @@ exports.fn = function (name, cb) {
     return cb(new Error('No server selected'));
   }
 
-  var server = settings.servers[name];
+  const server = settings.servers[name];
 
   if (!server) {
     return cb(new Error('Server doesn\'t exist'));
@@ -22,21 +25,25 @@ exports.fn = function (name, cb) {
     return cb(new Error('Can not stop a remote server'));
   }
 
-  var pid = couchmin.getPid(name);
+  const pid = self.getPid(name);
 
   if (!pid) {
     return cb(new Error('Server is not running'));
   }
 
-  couchmin.systemCouch(function (err, couchdb) {
-    if (err) { return cb(err); }
+  self.systemCouch((err, couchdb) => {
 
-    var child = cp.spawn(couchdb.bin, [
+    if (err) {
+      return cb(err);
+    }
+
+    const child = ChildProcess.spawn(couchdb.bin, [
       '-d',
-      '-p ' + couchmin.getPidPath(name)
+      '-p ' + self.getPidPath(name)
     ]);
 
-    child.on('close', function (code) {
+    child.on('close', (code) => {
+
       if (code) {
         return cb(new Error('Could not stop server'));
       }

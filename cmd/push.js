@@ -1,12 +1,15 @@
-var events = require('events');
-var async = require('async');
+'use strict';
+
+
+const Events = require('events');
+const Async = require('async');
 
 
 exports.fn = function (name, remote, cb) {
 
-  var couchmin = this;
-  var settings = couchmin.settings;
-  var start = new Date();
+  const self = this;
+  const settings = self.settings;
+  const start = new Date();
 
   if (!remote && settings.active) {
     remote = name;
@@ -21,17 +24,26 @@ exports.fn = function (name, remote, cb) {
     return cb(new Error('Server "' + remote + '" doesn\'t exists'));
   }
 
-  var remoteUri = couchmin.getUri(remote);
-  var ee = new events.EventEmitter();
+  const remoteUri = self.getUri(remote);
+  const ee = new Events.EventEmitter();
 
-  couchmin.allDbs(couchmin.getUri(name), function (err, dbs) {
-    if (err) { return cb(err); }
+  self.allDbs(self.getUri(name), (err, dbs) => {
+
+    if (err) {
+      return cb(err);
+    }
+
     ee.emit('pushStart', name, remote, dbs);
-    async.mapLimit(dbs, 2, function (db, cb) {
-      couchmin.replicate(ee, name, db, remoteUri + '/' + encodeURIComponent(db), cb);
-    }, function (err, results) {
-      if (err) { return cb(err); }
-      couchmin.syncStats(results);
+    Async.mapLimit(dbs, 2, (db, cb) => {
+
+      self.replicate(ee, name, db, remoteUri + '/' + encodeURIComponent(db), cb);
+    }, (err, results) => {
+
+      if (err) {
+        return cb(err);
+      }
+
+      self.syncStats(results);
       console.log(('Finished in ' + (Date.now() - start) + 'ms').bold);
     });
   });

@@ -1,4 +1,7 @@
-var exec = require('./exec');
+'use strict';
+
+
+const Exec = require('./exec');
 
 //
 // Start server and wait for it to be ready.
@@ -6,36 +9,62 @@ var exec = require('./exec');
 //
 module.exports = function start(name, cb) {
 
-  var r = new RegExp('^' + name);
+  const r = new RegExp('^' + name);
 
-  function wait() {
-    setTimeout(function () {
-      exec([ 'ls', '-f', 'type=local' ], function (err, stdout) {
-        if (err) { return cb(err); }
-        var line = stdout.trim().split('\n').filter(function (line) {
+  const wait = function () {
+
+    setTimeout(() => {
+
+      Exec(['ls', '-f', 'type=local'], (err, stdout) => {
+
+        if (err) {
+          return cb(err);
+        }
+
+        const line = stdout.trim().split('\n').filter((line) => {
+
           return r.test(line);
         }).shift();
-        if (!line) { return wait(); }
-        var cols = line.split(/\s+/);
-        var status = cols[2];
-        if (status !== 'up') { return wait(); }
+
+        if (!line) {
+          return wait();
+        }
+
+        const cols = line.split(/\s+/);
+        const status = cols[2];
+
+        if (status !== 'up') {
+          return wait();
+        }
+
         cb();
       });
     }, 1000);
-  }
+  };
 
-  exec([ 'start', name ], function (err) {
+
+  Exec(['start', name], (err) => {
+
     if (err && /Server doesn't exist/i.test(err.message)) {
-      exec([ 'create', name ], function (err) {
-        if (err) { return cb(err); }
-        exec([ 'start', name ], function (err) {
-          if (err) { return cb(err); }
+      Exec(['create', name], (err) => {
+
+        if (err) {
+          return cb(err);
+        }
+
+        Exec(['start', name], (err) => {
+
+          if (err) {
+            return cb(err);
+          }
           wait();
         });
       });
-    } else if (err) {
+    }
+    else if (err) {
       cb(err);
-    } else {
+    }
+    else {
       wait();
     }
   });

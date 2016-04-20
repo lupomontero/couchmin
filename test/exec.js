@@ -1,20 +1,30 @@
-var cp = require('child_process');
-var path = require('path');
-var _ = require('lodash');
-var confdir = path.join(require('os').tmpdir(), 'couchmin');
-var bin = path.join(__dirname, '../bin/cli.js');
+'use strict';
+
+
+const Os = require('os');
+const Path = require('path');
+const ChildProcess = require('child_process');
+const _ = require('lodash');
+
+
+const internals = {
+  confdir: Path.join(Os.tmpdir(), 'couchmin'),
+  bin: Path.join(__dirname, '../bin/cli.js')
+};
+
 
 module.exports = function (args, options, cb) {
+
   if (arguments.length === 2) {
     cb = options;
     options = {};
   }
 
-  options.env = _.extend({}, process.env, { HOME: confdir }, options.env);
+  options.env = _.extend({}, process.env, { HOME: internals.confdir }, options.env);
   args = args || [];
   args.push('--disable-updates');
-  cp.execFile(bin, args, options, cb);
+  ChildProcess.execFile(internals.bin, args, options, cb);
 };
 
-module.exports.confdir = confdir;
+module.exports.confdir = internals.confdir;
 
