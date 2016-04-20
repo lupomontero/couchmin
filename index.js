@@ -160,7 +160,6 @@ module.exports = function (settings, confFile) {
 
       Request.get(uri + '/_all_dbs', (err, resp) => {
 
-        console.log(err || resp.body);
         if (err) {
           return cb(err);
         }
