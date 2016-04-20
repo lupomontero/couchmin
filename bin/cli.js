@@ -140,7 +140,7 @@ if (Fs.existsSync(confFile)) {
 const updatesDisabled = settings.updates.enabled === false || argv['disable-updates'] === true;
 const twentyfourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
 const outdated = (settings.updates.latest !== Pkg.version);
-const lastCheck = settings.updates.lastCheck;
+let lastCheck = settings.updates.lastCheck;
 
 if (typeof lastCheck === 'string') {
   lastCheck = new Date(lastCheck);
