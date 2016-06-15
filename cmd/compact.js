@@ -89,7 +89,7 @@ exports.fn = function (name, cb) {
               cb(null, resp.body.rows);
             });
           },
-          compactDdocs: ['ddocs', function (cb, results) {
+          compactDdocs: ['ddocs', function (results, cb) {
 
             Async.each(results.ddocs, (row, cb) => {
 
