@@ -6,10 +6,13 @@ const Path = require('path');
 const Mkdirp = require('mkdirp');
 const Minimist = require('minimist');
 const Request = require('request').defaults({ json: true });
-const Colors = require('colors');
 const _ = require('lodash');
 const Pkg = require('../package.json');
 const Couchmin = require('../');
+
+
+require('colors');
+
 
 const argv = Minimist(process.argv.slice(2));
 const cmdName = argv._.shift() || 'help';
@@ -182,4 +185,3 @@ Request('https://registry.npmjs.org/couchmin', (err, resp) => {
 
   process.exit(2);
 });
-

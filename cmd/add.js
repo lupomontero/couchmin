@@ -36,7 +36,7 @@ exports.fn = function (name, uri, cb) {
     uri = uri.slice(0, -1);
   }
 
-  Request(uri, { auth: auth }, (err, resp) => {
+  Request(uri, { auth }, (err, resp) => {
 
     if (err) {
       return cb(err);
@@ -52,9 +52,9 @@ exports.fn = function (name, uri, cb) {
     }
 
     settings.servers[name] = {
-      name: name,
-      uri: uri,
-      auth: auth,
+      name,
+      uri,
+      auth,
       createdAt: new Date()
     };
 
@@ -68,4 +68,3 @@ exports.args = [
   { name: 'name', required: true, description: 'The server name.' },
   { name: 'uri', required: true, description: 'The server\'s URL.' }
 ];
-

@@ -22,7 +22,7 @@ module.exports = function (settings, confFile) {
     return memo;
   }, {
 
-    settings: settings,
+    settings,
 
     saveSettings: function (cb) {
 
@@ -103,8 +103,8 @@ module.exports = function (settings, confFile) {
       ee.emit('replicateStart', name, source, target);
       Request.post(this.getUri(name) + '/_replicate', {
         body: {
-          source: source,
-          target: target,
+          source,
+          target,
           create_target: true
         }
       }, (err, resp) => {
@@ -114,8 +114,8 @@ module.exports = function (settings, confFile) {
         }
 
         const result = {
-          source: source,
-          target: target,
+          source,
+          target,
           value: resp.body || {}
         };
 
@@ -186,7 +186,7 @@ module.exports = function (settings, confFile) {
 
         const couchdb = {
           prefix: Path.resolve(Path.dirname(bin), '../'),
-          bin: bin
+          bin
         };
 
         couchdb.ini = Path.resolve(couchdb.prefix, './etc/couchdb/default.ini');
@@ -203,4 +203,3 @@ module.exports = function (settings, confFile) {
   });
 
 };
-

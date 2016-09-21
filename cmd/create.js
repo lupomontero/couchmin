@@ -16,7 +16,7 @@ exports.fn = function (name, options, cb) {
   }
 
   const server = {
-    name: name,
+    name,
     port: self.getPort(),
     createdAt: new Date()
   };
@@ -73,4 +73,3 @@ exports.options = [
     description: 'If passed an admin user is created with the given password.'
   }
 ];
-
