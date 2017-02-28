@@ -10,8 +10,8 @@
     "couchmin": "./bin/cli.js"
   },
   "scripts": {
-    "pretest": "./node_modules/.bin/eslint .",
-    "test": "./node_modules/.bin/mocha test"
+    "pretest": "eslint .",
+    "test": "mocha test"
   },
   "dependencies": {
     "async": "^2.1.5",
